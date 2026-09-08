@@ -93,7 +93,7 @@ class MiaoxinGateway extends Gateway
      */
     protected function buildEndpoint(Config $config, string $path): string
     {
-        $host = rtrim($config->get('endpoint', self::ENDPOINT_HOST), '/');
+        $host = rtrim($config->get('endpoint') ?: self::ENDPOINT_HOST, '/');
 
         return $host.$path;
     }
@@ -159,7 +159,7 @@ class MiaoxinGateway extends Gateway
     }
 
     /**
-     * Post the request and validate the top-level code.
+     * Post the request and validate the response codes.
      *
      * @return array
      *
@@ -171,6 +171,12 @@ class MiaoxinGateway extends Gateway
 
         if ($result['code'] != self::SUCCESS_CODE) {
             throw new GatewayErrorException($result['msg'], $result['code'], $result);
+        }
+
+        foreach ($result['result'] ?? [] as $item) {
+            if ($item['code'] != self::SUCCESS_CODE) {
+                throw new GatewayErrorException($item['msg'], $item['code'], $result);
+            }
         }
 
         return $result;
