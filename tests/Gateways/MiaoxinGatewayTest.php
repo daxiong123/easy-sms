@@ -101,6 +101,40 @@ class MiaoxinGatewayTest extends TestCase
         ], $gateway->send(new PhoneNumber(18188888888), $message, $config));
     }
 
+    public function test_send_content_with_blank_signature_id()
+    {
+        $config = [
+            'account' => 'mock-account',
+            'secret' => 'mock-secret',
+            'signature_id' => '',
+        ];
+        $gateway = \Mockery::mock(MiaoxinGateway::class.'[post]', [$config])->shouldAllowMockingProtectedMethods();
+
+        $params = [
+            'account' => 'mock-account',
+            'mobiles' => 18188888888,
+            'content' => 'This is a test message.',
+        ];
+        $gateway->shouldReceive('post')
+            ->with(MiaoxinGateway::ENDPOINT_HOST.MiaoxinGateway::SEND_PATH, \Mockery::subset($params))
+            ->andReturn([
+                'code' => MiaoxinGateway::SUCCESS_CODE,
+                'msg' => '发送成功',
+                'total' => 1,
+                'results' => [],
+            ])->once();
+
+        $message = new Message(['content' => 'This is a test message.']);
+        $config = new Config($config);
+
+        $this->assertSame([
+            'code' => MiaoxinGateway::SUCCESS_CODE,
+            'msg' => '发送成功',
+            'total' => 1,
+            'results' => [],
+        ], $gateway->send(new PhoneNumber(18188888888), $message, $config));
+    }
+
     public function test_send_template()
     {
         $config = [
@@ -130,6 +164,47 @@ class MiaoxinGatewayTest extends TestCase
             'data' => [
                 'code' => '1234',
                 'name' => '张三',
+            ],
+        ]);
+        $config = new Config($config);
+
+        $this->assertSame([
+            'code' => MiaoxinGateway::SUCCESS_CODE,
+            'msg' => '发送成功',
+            'total' => 1,
+            'results' => [],
+        ], $gateway->send(new PhoneNumber(18188888888), $message, $config));
+    }
+
+    public function test_send_template_takes_precedence_over_content()
+    {
+        $config = [
+            'account' => 'mock-account',
+            'secret' => 'mock-secret',
+            'signature_id' => 123,
+        ];
+        $gateway = \Mockery::mock(MiaoxinGateway::class.'[post]', [$config])->shouldAllowMockingProtectedMethods();
+
+        $params = [
+            'account' => 'mock-account',
+            'mobiles' => 18188888888,
+            'templateId' => 'mock-tpl-id',
+            'param1' => '1234',
+        ];
+        $gateway->shouldReceive('post')
+            ->with(MiaoxinGateway::ENDPOINT_HOST.MiaoxinGateway::TEMPLATE_PATH, \Mockery::subset($params))
+            ->andReturn([
+                'code' => MiaoxinGateway::SUCCESS_CODE,
+                'msg' => '发送成功',
+                'total' => 1,
+                'results' => [],
+            ])->once();
+
+        $message = new Message([
+            'content' => 'This is a test message.',
+            'template' => 'mock-tpl-id',
+            'data' => [
+                'code' => '1234',
             ],
         ]);
         $config = new Config($config);

@@ -46,12 +46,12 @@ class MiaoxinGateway extends Gateway
     public function send(PhoneNumberInterface $to, MessageInterface $message, Config $config)
     {
         $template = $message->getTemplate($this);
-        $content = $message->getContent($this);
+        $signatureId = $config->get('signature_id');
 
-        if (! empty($template) && empty($content)) {
+        if ($template !== null && $template !== '') {
             $params = $this->buildTemplateParams($to, $message, $config);
             $path = self::TEMPLATE_PATH;
-        } elseif (! is_null($config->get('signature_id'))) {
+        } elseif ($signatureId !== null && $signatureId !== '') {
             $params = $this->buildContentParams($to, $message, $config, true);
             $path = self::FIXED_SIGNATURE_PATH;
         } else {
